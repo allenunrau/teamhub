@@ -1,0 +1,117 @@
+// Prisma schema for the team coordination app.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+
+  invitesSent       Invite[]        @relation("InvitedBy")
+  eventsCreated     CalendarEvent[] @relation("EventCreatedBy")
+  itemsAssigned     EventItem[]     @relation("ItemAssignedTo")
+  topicsCreated     Topic[]         @relation("TopicCreatedBy")
+  posts             Post[]          @relation("PostAuthor")
+  announcements     Announcement[]  @relation("AnnouncementAuthor")
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  role        Role      @default(USER)
+  invitedById String
+  invitedBy   User      @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
+
+model CalendarEvent {
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @default("")
+  location      String   @default("")
+  startsAt      DateTime
+  endsAt        DateTime
+  allDay        Boolean  @default(false)
+  createdById   String?
+  createdBy     User?    @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items EventItem[]
+
+  @@index([startsAt])
+}
+
+model EventItem {
+  id             String        @id @default(cuid())
+  eventId        String
+  event          CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title          String
+  description    String        @default("")
+  done           Boolean       @default(false)
+  assignedToId   String?
+  assignedTo     User?         @relation("ItemAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@index([eventId])
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  createdById String?
+  createdBy   User?    @relation("TopicCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  posts Post[]
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation("PostAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  body      String
+  parentId  String?
+  parent    Post?    @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Post[]   @relation("PostReplies")
+  createdAt DateTime @default(now())
+
+  @@index([topicId])
+  @@index([parentId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  authorId  String?
+  author    User?    @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([pinned])
+}
