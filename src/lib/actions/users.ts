@@ -17,7 +17,7 @@ const InviteSchema = z.object({
 const CreateUserSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters."),
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z.string().min(3, "Password must be at least 3 characters."),
   role: z.enum(["USER", "ADMIN"]),
 });
 
@@ -56,7 +56,7 @@ const UpdateUserSchema = z.object({
   role: z.enum(["USER", "ADMIN"]),
   password: z.union([
     z.literal(""),
-    z.string().min(8, "New password must be at least 8 characters."),
+    z.string().min(3, "New password must be at least 3 characters."),
   ]),
 });
 
