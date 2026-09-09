@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createUserDirect, updateUser } from "@/lib/actions/users";
 import { Button, FieldError, inputClass, labelClass } from "@/components/ui";
 import { Modal } from "@/components/modal";
@@ -20,6 +20,10 @@ export default function UserFormModal({ mode, user, onClose }: Props) {
   const boundAction = mode === "edit" ? updateUser.bind(null, user.id) : createUserDirect;
   const [state, formAction, pending] = useActionState(boundAction, undefined);
   const submitted = useRef(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const passwordsMismatch =
+    (mode === "create" || password.length > 0) && password !== confirmPassword;
 
   useEffect(() => {
     if (!submitted.current || pending) return;
@@ -34,6 +38,7 @@ export default function UserFormModal({ mode, user, onClose }: Props) {
     <Modal title={mode === "create" ? "Add team member" : "Edit team member"} onClose={onClose}>
       <form
         action={(formData) => {
+          if (passwordsMismatch) return;
           submitted.current = true;
           formAction(formData);
         }}
@@ -78,8 +83,27 @@ export default function UserFormModal({ mode, user, onClose }: Props) {
             type="password"
             required={mode === "create"}
             placeholder={mode === "edit" ? "Leave blank to keep current password" : undefined}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className={inputClass}
           />
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className={labelClass}>
+            {mode === "create" ? "Confirm password" : "Confirm new password"}
+          </label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            required={mode === "create"}
+            placeholder={mode === "edit" ? "Leave blank to keep current password" : undefined}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={inputClass}
+          />
+          <FieldError>{passwordsMismatch ? "Passwords do not match." : undefined}</FieldError>
         </div>
 
         <div>
@@ -95,7 +119,7 @@ export default function UserFormModal({ mode, user, onClose }: Props) {
         <FieldError>{state?.error}</FieldError>
 
         <div className="flex justify-end pt-1">
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || passwordsMismatch}>
             {pending ? "Saving…" : mode === "create" ? "Create user" : "Save changes"}
           </Button>
         </div>

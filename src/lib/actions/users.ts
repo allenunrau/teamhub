@@ -14,12 +14,18 @@ const InviteSchema = z.object({
   role: z.enum(["USER", "ADMIN"]),
 });
 
-const CreateUserSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters."),
-  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
-  password: z.string().min(3, "Password must be at least 3 characters."),
-  role: z.enum(["USER", "ADMIN"]),
-});
+const CreateUserSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters."),
+    email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+    password: z.string().min(3, "Password must be at least 3 characters."),
+    confirmPassword: z.string(),
+    role: z.enum(["USER", "ADMIN"]),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 
 export async function createUserDirect(
   _prevState: FormState,
@@ -31,6 +37,7 @@ export async function createUserDirect(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
     role: formData.get("role"),
   });
   if (!parsed.success) {
@@ -50,15 +57,21 @@ export async function createUserDirect(
   return { error: undefined };
 }
 
-const UpdateUserSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters."),
-  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
-  role: z.enum(["USER", "ADMIN"]),
-  password: z.union([
-    z.literal(""),
-    z.string().min(3, "New password must be at least 3 characters."),
-  ]),
-});
+const UpdateUserSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name must be at least 2 characters."),
+    email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+    role: z.enum(["USER", "ADMIN"]),
+    password: z.union([
+      z.literal(""),
+      z.string().min(3, "New password must be at least 3 characters."),
+    ]),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 
 export async function updateUser(
   userId: string,
@@ -72,6 +85,7 @@ export async function updateUser(
     email: formData.get("email"),
     role: formData.get("role"),
     password: formData.get("password") ?? "",
+    confirmPassword: formData.get("confirmPassword") ?? "",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
