@@ -9,24 +9,32 @@ import { createSession, deleteSession } from "@/lib/session";
 export type FormState = { error?: string } | undefined;
 
 const LoginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+  identifier: z.string().trim().min(1, "Enter your email or name."),
   password: z.string().min(1, "Password is required."),
 });
+
+async function findUserByIdentifier(identifier: string) {
+  const byEmail = await prisma.user.findUnique({ where: { email: identifier.toLowerCase() } });
+  if (byEmail) return byEmail;
+
+  const users = await prisma.user.findMany();
+  return users.find((u) => u.name.toLowerCase() === identifier.toLowerCase()) ?? null;
+}
 
 export async function login(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
   const parsed = LoginSchema.safeParse({
-    email: formData.get("email"),
+    identifier: formData.get("identifier"),
     password: formData.get("password"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
-  const { email, password } = parsed.data;
+  const { identifier, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await findUserByIdentifier(identifier);
   if (!user) {
     return { error: "Invalid email or password." };
   }
@@ -49,7 +57,7 @@ export async function logout() {
 const AcceptInviteSchema = z
   .object({
     name: z.string().trim().min(2, "Name must be at least 2 characters."),
-    password: z.string().min(8, "Password must be at least 8 characters."),
+    password: z.string().min(3, "Password must be at least 3 characters."),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {

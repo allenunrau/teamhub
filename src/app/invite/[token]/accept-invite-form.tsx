@@ -35,8 +35,8 @@ export default function AcceptInviteForm({ token }: { token: string }) {
           type="password"
           required
           autoComplete="new-password"
-          minLength={8}
-          placeholder="At least 8 characters"
+          minLength={3}
+          placeholder="At least 3 characters"
           className={inputClass}
         />
       </div>

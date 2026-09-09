@@ -11,16 +11,16 @@ export default function LoginForm({ next }: { next: string }) {
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
       <div>
-        <label htmlFor="email" className={labelClass}>
-          Email
+        <label htmlFor="identifier" className={labelClass}>
+          Email or name
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="identifier"
+          name="identifier"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="you@example.com"
+          autoComplete="username"
+          placeholder="you@example.com or your name"
           className={inputClass}
         />
       </div>
