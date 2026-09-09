@@ -72,6 +72,29 @@ export default function EventModal({
     <Modal title={mode === "create" ? "New event" : "Edit event"} onClose={onClose} wide>
       <form
         action={(formData) => {
+          // Build real timestamps in the browser's own timezone (matching how
+          // the date/time inputs were displayed) instead of letting the server
+          // action re-parse plain date+time text in its own timezone.
+          const date = formData.get("date") as string;
+          const startTime = (formData.get("startTime") as string) || "";
+          const endTime = (formData.get("endTime") as string) || "";
+          const allDay = formData.get("allDay") === "true" || !startTime;
+
+          const startsAt = allDay
+            ? new Date(`${date}T00:00:00`)
+            : new Date(`${date}T${startTime}:00`);
+          const endsAt = allDay
+            ? new Date(`${date}T23:59:59`)
+            : new Date(`${date}T${endTime || startTime}:00`);
+
+          if (allDay) {
+            formData.set("allDay", "true");
+          } else {
+            formData.delete("allDay");
+          }
+          formData.set("startsAt", startsAt.toISOString());
+          formData.set("endsAt", endsAt.toISOString());
+
           submitted.current = true;
           formAction(formData);
         }}

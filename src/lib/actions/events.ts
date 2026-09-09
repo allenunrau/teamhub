@@ -10,24 +10,13 @@ const EventSchema = z
     title: z.string().trim().min(1, "Title is required.").max(200),
     description: z.string().trim().max(4000).optional().default(""),
     location: z.string().trim().max(200).optional().default(""),
-    date: z.string().min(1, "Date is required."),
-    startTime: z.string().optional().default(""),
-    endTime: z.string().optional().default(""),
     allDay: z.coerce.boolean().optional().default(false),
-  })
-  .transform((data) => {
-    const allDay = data.allDay || !data.startTime;
-    const startsAt = allDay
-      ? new Date(`${data.date}T00:00:00`)
-      : new Date(`${data.date}T${data.startTime}:00`);
-    const endsAt = allDay
-      ? new Date(`${data.date}T23:59:59`)
-      : new Date(`${data.date}T${data.endTime || data.startTime}:00`);
-    return { ...data, allDay, startsAt, endsAt };
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date(),
   })
   .refine((data) => data.endsAt >= data.startsAt, {
     error: "End time must be after start time.",
-    path: ["endTime"],
+    path: ["endsAt"],
   });
 
 export type EventFormState = { error?: string } | undefined;
