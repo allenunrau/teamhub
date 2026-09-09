@@ -3,6 +3,7 @@ import {
   endOfMonth,
   startOfWeek,
   endOfWeek,
+  format,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/dal";
@@ -46,7 +47,7 @@ export default async function CalendarPage({
 
   return (
     <CalendarView
-      monthAnchor={monthStart.toISOString()}
+      monthAnchor={format(monthStart, "yyyy-MM")}
       events={events}
       members={members}
       currentUser={currentUser}

@@ -42,7 +42,7 @@ export default function CalendarView({
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<ModalState>(null);
-  const anchor = useMemo(() => new Date(monthAnchor), [monthAnchor]);
+  const anchor = useMemo(() => new Date(`${monthAnchor}-01T00:00:00`), [monthAnchor]);
 
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
