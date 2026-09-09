@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { deleteAnnouncement, togglePin } from "@/lib/actions/announcements";
-import { Avatar, Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Avatar, Badge, Button, Card, EmptyState, FieldError } from "@/components/ui";
 import { icons } from "@/components/icons";
 
 type Announcement = {
@@ -23,19 +23,38 @@ export default function AnnouncementList({
 }) {
   const [items, setItems] = useState(announcements);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function handlePin(id: string, pinned: boolean) {
+    setError(null);
+    const previous = items;
     setItems((prev) =>
       [...prev.map((a) => (a.id === id ? { ...a, pinned } : a))].sort(
         (a, b) => Number(b.pinned) - Number(a.pinned)
       )
     );
-    startTransition(() => togglePin(id, pinned));
+    startTransition(async () => {
+      try {
+        await togglePin(id, pinned);
+      } catch (e) {
+        setItems(previous);
+        setError(e instanceof Error ? e.message : "Something went wrong.");
+      }
+    });
   }
 
   function handleDelete(id: string) {
+    setError(null);
+    const previous = items;
     setItems((prev) => prev.filter((a) => a.id !== id));
-    startTransition(() => deleteAnnouncement(id));
+    startTransition(async () => {
+      try {
+        await deleteAnnouncement(id);
+      } catch (e) {
+        setItems(previous);
+        setError(e instanceof Error ? e.message : "Something went wrong.");
+      }
+    });
   }
 
   if (items.length === 0) {
@@ -44,6 +63,7 @@ export default function AnnouncementList({
 
   return (
     <div className="space-y-3">
+      <FieldError>{error}</FieldError>
       {items.map((a) => {
         const canManage = currentUser.role === "ADMIN" || currentUser.id === a.author?.id;
         return (
