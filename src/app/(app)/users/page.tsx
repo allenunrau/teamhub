@@ -4,6 +4,7 @@ import { Card } from "@/components/ui";
 import InviteForm from "./invite-form";
 import UserList from "./user-list";
 import InviteList from "./invite-list";
+import AddUserButton from "./add-user-button";
 
 export default async function UsersPage() {
   const currentUser = await requireAdmin();
@@ -30,7 +31,10 @@ export default async function UsersPage() {
       </div>
 
       <Card className="p-5">
-        <h2 className="mb-3 font-medium">Invite someone</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-medium">Invite someone</h2>
+          <AddUserButton />
+        </div>
         <InviteForm />
       </Card>
 
