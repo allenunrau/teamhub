@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { format } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/dal";
 import { Avatar, Card, EmptyState } from "@/components/ui";
@@ -75,7 +76,11 @@ export default async function DashboardPage() {
           ) : (
             <Card className="divide-y divide-border">
               {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-center gap-3 p-3.5">
+                <Link
+                  key={event.id}
+                  href={`/calendar?month=${format(event.startsAt, "yyyy-MM")}&event=${event.id}`}
+                  className="flex items-center gap-3 p-3.5 hover:bg-surface-muted"
+                >
                   <div className="flex w-14 shrink-0 flex-col items-center rounded-lg bg-surface-muted py-1.5 text-center">
                     <span className="text-[10px] uppercase text-muted-foreground">
                       {event.startsAt.toLocaleDateString(undefined, { month: "short" })}
@@ -97,7 +102,7 @@ export default async function DashboardPage() {
                         ` · ${event.items.filter((i) => i.done).length}/${event.items.length} items done`}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </Card>
           )}

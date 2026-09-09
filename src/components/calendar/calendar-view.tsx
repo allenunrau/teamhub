@@ -34,14 +34,21 @@ export default function CalendarView({
   events,
   members,
   currentUser,
+  initialEventId,
 }: {
   monthAnchor: string;
   events: CalendarEventData[];
   members: Member[];
   currentUser: Member;
+  initialEventId?: string;
 }) {
   const router = useRouter();
-  const [modal, setModal] = useState<ModalState>(null);
+  const [modal, setModal] = useState<ModalState>(() => {
+    const initialEvent = initialEventId
+      ? events.find((e) => e.id === initialEventId)
+      : undefined;
+    return initialEvent ? { kind: "event", event: initialEvent } : null;
+  });
   const anchor = useMemo(() => new Date(`${monthAnchor}-01T00:00:00`), [monthAnchor]);
 
   const monthStart = startOfMonth(anchor);

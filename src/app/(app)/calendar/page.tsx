@@ -14,6 +14,7 @@ export default async function CalendarPage({
 }: PageProps<"/calendar">) {
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
+  const eventParam = typeof params.event === "string" ? params.event : undefined;
 
   const anchor =
     monthParam && /^\d{4}-\d{2}$/.test(monthParam)
@@ -51,6 +52,7 @@ export default async function CalendarPage({
       events={events}
       members={members}
       currentUser={currentUser}
+      initialEventId={eventParam}
     />
   );
 }
