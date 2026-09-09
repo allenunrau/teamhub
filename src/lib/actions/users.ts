@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 import * as z from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/dal";
@@ -12,6 +13,93 @@ const InviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
   role: z.enum(["USER", "ADMIN"]),
 });
+
+const CreateUserSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters."),
+  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+  role: z.enum(["USER", "ADMIN"]),
+});
+
+export async function createUserDirect(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireAdmin();
+
+  const parsed = CreateUserSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+    role: formData.get("role"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  const { name, email, password, role } = parsed.data;
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return { error: "A user with this email already exists." };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.user.create({ data: { name, email, passwordHash, role } });
+
+  revalidatePath("/users");
+  return { error: undefined };
+}
+
+const UpdateUserSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters."),
+  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+  role: z.enum(["USER", "ADMIN"]),
+  password: z.union([
+    z.literal(""),
+    z.string().min(8, "New password must be at least 8 characters."),
+  ]),
+});
+
+export async function updateUser(
+  userId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const admin = await requireAdmin();
+
+  const parsed = UpdateUserSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    role: formData.get("role"),
+    password: formData.get("password") ?? "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  const { name, email, role, password } = parsed.data;
+
+  if (admin.id === userId && role !== "ADMIN") {
+    return { error: "You cannot remove your own admin access." };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing && existing.id !== userId) {
+    return { error: "A user with this email already exists." };
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name,
+      email,
+      role,
+      ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
+    },
+  });
+
+  revalidatePath("/users");
+  return { error: undefined };
+}
 
 const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 

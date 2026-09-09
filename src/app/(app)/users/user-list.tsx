@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { deleteUser, setUserRole } from "@/lib/actions/users";
 import { Avatar, Badge, Button } from "@/components/ui";
+import UserFormModal from "./user-form-modal";
 
 type UserRow = {
   id: string;
@@ -19,16 +20,34 @@ export default function UserList({
   users: UserRow[];
   currentUserId: string;
 }) {
+  const [editing, setEditing] = useState<UserRow | null>(null);
+
   return (
     <div className="divide-y divide-border">
       {users.map((user) => (
-        <UserRowItem key={user.id} user={user} isSelf={user.id === currentUserId} />
+        <UserRowItem
+          key={user.id}
+          user={user}
+          isSelf={user.id === currentUserId}
+          onEdit={() => setEditing(user)}
+        />
       ))}
+      {editing && (
+        <UserFormModal mode="edit" user={editing} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }
 
-function UserRowItem({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
+function UserRowItem({
+  user,
+  isSelf,
+  onEdit,
+}: {
+  user: UserRow;
+  isSelf: boolean;
+  onEdit: () => void;
+}) {
   const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +99,9 @@ function UserRowItem({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
           title={isSelf && user.role === "ADMIN" ? "You can't remove your own admin access" : undefined}
         >
           Make {user.role === "ADMIN" ? "member" : "admin"}
+        </Button>
+        <Button variant="ghost" onClick={onEdit}>
+          Edit
         </Button>
         {confirming ? (
           <div className="flex items-center gap-1.5">
