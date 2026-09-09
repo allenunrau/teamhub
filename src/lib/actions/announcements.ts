@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/dal";
+import { getCurrentUser, requireAdmin } from "@/lib/dal";
 import type { FormState } from "@/lib/actions/auth";
 
 const AnnouncementSchema = z.object({
@@ -15,7 +15,7 @@ export async function createAnnouncement(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const user = await getCurrentUser();
+  const user = await requireAdmin();
   const parsed = AnnouncementSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),
@@ -25,7 +25,7 @@ export async function createAnnouncement(
   }
 
   await prisma.announcement.create({
-    data: { ...parsed.data, authorId: user.id, pinned: user.role === "ADMIN" },
+    data: { ...parsed.data, authorId: user.id, pinned: true },
   });
 
   revalidatePath("/announcements");

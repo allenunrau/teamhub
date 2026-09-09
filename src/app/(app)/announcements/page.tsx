@@ -20,10 +20,12 @@ export default async function AnnouncementsPage() {
         </p>
       </div>
 
-      <Card className="p-5">
-        <h2 className="mb-3 font-medium">Post an announcement</h2>
-        <NewAnnouncementForm />
-      </Card>
+      {currentUser.role === "ADMIN" && (
+        <Card className="p-5">
+          <h2 className="mb-3 font-medium">Post an announcement</h2>
+          <NewAnnouncementForm />
+        </Card>
+      )}
 
       <AnnouncementList announcements={announcements} currentUser={currentUser} />
     </div>
