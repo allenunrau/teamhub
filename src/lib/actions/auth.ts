@@ -36,11 +36,13 @@ export async function login(
 
   const user = await findUserByIdentifier(identifier);
   if (!user) {
+    console.warn(`[auth] failed login: unknown identifier "${identifier}"`);
     return { error: "Invalid email or password." };
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
+    console.warn(`[auth] failed login: wrong password for "${identifier}"`);
     return { error: "Invalid email or password." };
   }
 
